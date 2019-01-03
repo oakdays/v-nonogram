@@ -21,7 +21,7 @@
           v-for="(column, columnIndex) in row"
           :key="columnIndex"
           :class="{'selected': column == 1, 'marked': column == 2}"
-          @click="select(rowIndex, columnIndex)"
+          @click.exact="select(rowIndex, columnIndex)"
           @click.right.prevent="mark(rowIndex, columnIndex)" />
       </tr>
     </tbody>
