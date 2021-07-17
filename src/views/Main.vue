@@ -1,20 +1,25 @@
 <template>
-  <div
-    class="card main-container"
-    :style="{'width': `${columns * 4}rem`}">
+  <div class="card main-container d-inline-block">
     <div class="card-body">
       <grid
         :solution="solution"
         :solved="isGameSolved"
         :rows="rows"
         :columns="columns"
-        @victory="isGameSolved = true" />
-      <button
-        class="btn btn-sm btn-block"
-        :class="{'btn-primary': !isGameSolved, 'btn-success': isGameSolved}"
-        @click="generateGame()">
-        New
-      </button>
+        @victory="isGameSolved = true"
+      />
+      <div class="d-grid">
+        <button
+          class="btn btn-sm"
+          :class="{
+            'btn-primary': !isGameSolved,
+            'btn-success': isGameSolved,
+          }"
+          @click="generateGame"
+        >
+          New
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -24,26 +29,28 @@ import Grid from '@/components/Grid'
 
 export default {
   components: {
-    Grid
+    Grid,
   },
-  data () {
+
+  data() {
     return {
       solution: [],
       isGameSolved: false,
       rows: 3,
-      columns: 3
+      columns: 3,
     }
   },
-  mounted () {
+
+  mounted() {
     this.generateGame()
   },
+
   methods: {
-    generateGame () {
+    generateGame() {
       let solution = []
 
-      // TODO: implement correct dynamic sizing of grid cells first
-      // this.rows = Math.floor(Math.random() * 3) + 3
-      // this.columns = Math.floor(Math.random() * 3) + 3
+      this.rows = Math.floor(Math.random() * 3) + 6
+      this.columns = Math.floor(Math.random() * 3) + 6
 
       for (let i = 0; i < this.rows; i++) {
         solution.push([])
@@ -54,13 +61,14 @@ export default {
 
       this.solution = solution
       this.isGameSolved = false
-    }
-  }
+    },
+  },
 }
 </script>
 
 <style lang="scss" scoped>
-  .main-container {
-    margin: 1rem;
-  }
+.main-container {
+  margin: 1rem;
+  font-family: Inter;
+}
 </style>

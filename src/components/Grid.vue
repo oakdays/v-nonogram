@@ -1,31 +1,56 @@
 <template>
-  <table
-    class="table table-bordered table-sm text-center noselect"
-    style="table-layout: fixed;">
-    <thead>
-      <tr>
-        <th />
-        <th
-          v-for="(hint, index) in columnHints"
-          :key="index">
-          {{ hint || 0 }}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        v-for="(row, rowIndex) in matrix"
-        :key="rowIndex">
-        <th>{{ rowHints[rowIndex] || 0 }}</th>
-        <td
-          v-for="(column, columnIndex) in row"
-          :key="columnIndex"
-          :class="{'selected': column == 1, 'marked': column == 2}"
-          @click.exact="select(rowIndex, columnIndex)"
-          @click.right.prevent="mark(rowIndex, columnIndex)" />
-      </tr>
-    </tbody>
-  </table>
+  <div class="mb-3 border">
+    <div class="border-bottom d-flex">
+      <div
+        class="d-flex flex-column justify-content-center border-end cell"
+        :style="{ width: maximumRowHintWidth }"
+      />
+      <div
+        v-for="(hints, index) in columnHints"
+        :key="index"
+        class="d-flex flex-column justify-content-end cell"
+        :class="{
+          'border-end': index < columnHints.length - 1,
+        }"
+      >
+        <template v-if="hints.length">
+          <div v-for="(hint, hintIndex) in hints" :key="hintIndex">
+            {{ hint }}
+          </div>
+        </template>
+        <template v-else> 0 </template>
+      </div>
+    </div>
+
+    <div
+      v-for="(row, rowIndex) in matrix"
+      :key="rowIndex"
+      class="d-flex"
+      :class="{
+        'border-bottom': rowIndex < matrix.length - 1,
+      }"
+    >
+      <div
+        class="border-end cell pe-2 text-end"
+        :style="{ width: maximumRowHintWidth }"
+      >
+        {{ getRowHint(rowIndex) }}
+      </div>
+
+      <div
+        v-for="(column, columnIndex) in row"
+        :key="columnIndex"
+        :class="{
+          selected: column == 1,
+          marked: column == 2,
+          'border-end': columnIndex < row.length - 1,
+        }"
+        class="cell cell--clickable"
+        @click.exact="select(rowIndex, columnIndex)"
+        @click.right.prevent="mark(rowIndex, columnIndex)"
+      />
+    </div>
+  </div>
 </template>
 
 <script>
@@ -34,19 +59,30 @@ export default {
     solution: { type: Array, default: () => [] },
     solved: { type: Boolean, default: false },
     rows: { type: Number, default: 3 },
-    columns: { type: Number, default: 3 }
+    columns: { type: Number, default: 3 },
   },
-  data () {
+
+  data() {
     return {
       matrix: [
         [0, 0, 0],
         [0, 0, 0],
-        [0, 0, 0]
-      ]
+        [0, 0, 0],
+      ],
     }
   },
+
   computed: {
-    rowHints () {
+    maximumRowHintWidth() {
+      let maxWidth = 0
+
+      this.rowHints.forEach((hints) => {
+        maxWidth = Math.max(maxWidth, hints.length)
+      })
+
+      return `${maxWidth * 20}px`
+    },
+    rowHints() {
       let hints = []
 
       for (let i in this.solution) {
@@ -63,7 +99,7 @@ export default {
 
       return this.removeZeros(hints)
     },
-    columnHints () {
+    columnHints() {
       let hints = []
 
       for (let i in this.solution) {
@@ -77,15 +113,20 @@ export default {
       }
 
       return this.removeZeros(hints)
-    }
+    },
   },
+
   watch: {
-    matrix () {
+    matrix() {
       let isEqual = true
 
       for (let i in this.matrix) {
         for (let j in this.matrix[i]) {
-          if ((this.matrix[i][j] === 1 && this.matrix[i][j] !== this.solution[i][j]) || (this.matrix[i][j] !== 1 && this.solution[i][j] === 1)) {
+          if (
+            (this.matrix[i][j] === 1 &&
+              this.matrix[i][j] !== this.solution[i][j]) ||
+            (this.matrix[i][j] !== 1 && this.solution[i][j] === 1)
+          ) {
             isEqual = false
             break
           }
@@ -95,7 +136,7 @@ export default {
 
       if (isEqual) this.$emit('victory')
     },
-    solution () {
+    solution() {
       let matrix = []
       for (let i = 0; i < this.rows; i++) {
         matrix.push([])
@@ -104,10 +145,11 @@ export default {
         }
       }
       this.matrix = matrix
-    }
+    },
   },
+
   methods: {
-    select (row, column) {
+    select(row, column) {
       if (!this.solved) {
         this.$set(
           this.matrix[row],
@@ -116,7 +158,7 @@ export default {
         )
       }
     },
-    mark (row, column) {
+    mark(row, column) {
       if (!this.solved) {
         this.$set(
           this.matrix[row],
@@ -125,37 +167,46 @@ export default {
         )
       }
     },
-    removeZeros (hints) {
-      // remove zeros and turn into string
-      for (let i in hints) {
-        hints[i] = hints[i].filter(hint => hint > 0).join(' ')
-      }
-
+    removeZeros(hints) {
+      hints.forEach((hintGroup, index) => {
+        hints[index] = hintGroup.filter((hint) => hint > 0)
+      })
       return hints
-    }
-  }
+    },
+    getRowHint(index) {
+      return this.rowHints[index] && this.rowHints[index].length
+        ? this.rowHints[index].join(' ')
+        : 0
+    },
+  },
 }
 </script>
 
 <style lang="scss" scoped>
-/* td,
-th {
-  width: 25%;
-} */
-td {
-  cursor: pointer;
-  &:hover {
-    background-color: whitesmoke;
-  }
-  &:active {
-    background-color: lightgrey;
-  }
-  &.selected {
-    background-color: black;
-  }
-  &.marked {
-    background-color: lightcoral;
+.cell {
+  width: 30px;
+  text-align: center;
+  letter-spacing: 1px;
+
+  &--clickable {
+    cursor: pointer;
+    padding: 1px;
+
+    &:hover {
+      background-color: whitesmoke;
+    }
+
+    &:active {
+      background-color: lightgrey;
+    }
+
+    &.selected {
+      background-color: black;
+    }
+
+    &.marked {
+      background-color: lightcoral;
+    }
   }
 }
 </style>
-
