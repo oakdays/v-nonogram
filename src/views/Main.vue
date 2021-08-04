@@ -8,6 +8,7 @@
         :columns="columns"
         @victory="isGameSolved = true"
       />
+
       <div class="d-grid">
         <button
           class="btn btn-sm"

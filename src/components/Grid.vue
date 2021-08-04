@@ -46,14 +46,21 @@
           'border-end': columnIndex < row.length - 1,
         }"
         class="cell cell--clickable"
-        @click.exact="select(rowIndex, columnIndex)"
-        @click.right.prevent="mark(rowIndex, columnIndex)"
+        @click.right.prevent
+        @mousedown="onMouseDown($event, rowIndex, columnIndex)"
+        @mouseup="onMouseUp"
+        @mouseover="onHover(rowIndex, columnIndex)"
       />
     </div>
   </div>
 </template>
 
 <script>
+const actions = {
+  INSERT: 1,
+  MARK: 2,
+}
+
 export default {
   props: {
     solution: { type: Array, default: () => [] },
@@ -69,6 +76,9 @@ export default {
         [0, 0, 0],
         [0, 0, 0],
       ],
+      keyBeingPressed: -1,
+      isInserting: false,
+      isRemoving: false,
     }
   },
 
@@ -82,6 +92,7 @@ export default {
 
       return `${maxWidth * 20}px`
     },
+
     rowHints() {
       let hints = []
 
@@ -99,6 +110,7 @@ export default {
 
       return this.removeZeros(hints)
     },
+
     columnHints() {
       let hints = []
 
@@ -136,6 +148,7 @@ export default {
 
       if (isEqual) this.$emit('victory')
     },
+
     solution() {
       let matrix = []
       for (let i = 0; i < this.rows; i++) {
@@ -149,34 +162,60 @@ export default {
   },
 
   methods: {
-    select(row, column) {
+    affectCell(row, column, actionValue) {
       if (!this.solved) {
-        this.$set(
-          this.matrix[row],
-          column,
-          this.matrix[row][column] == 1 ? 0 : 1
-        )
+        let cellValue = -1
+
+        if (this.isInserting && this.matrix[row][column] == 0)
+          cellValue = actionValue
+        else if (this.isRemoving && this.matrix[row][column] == actionValue)
+          cellValue = 0
+        else if (!this.isInserting && !this.isRemoving) {
+          cellValue = this.matrix[row][column] == actionValue ? 0 : actionValue
+          if (cellValue) this.isInserting = true
+          else this.isRemoving = true
+        }
+
+        if (cellValue >= 0) this.$set(this.matrix[row], column, cellValue)
       }
     },
-    mark(row, column) {
-      if (!this.solved) {
-        this.$set(
-          this.matrix[row],
-          column,
-          this.matrix[row][column] == 2 ? 0 : 2
-        )
-      }
-    },
+
     removeZeros(hints) {
       hints.forEach((hintGroup, index) => {
         hints[index] = hintGroup.filter((hint) => hint > 0)
       })
       return hints
     },
+
     getRowHint(index) {
       return this.rowHints[index] && this.rowHints[index].length
         ? this.rowHints[index].join(' ')
         : 0
+    },
+
+    onMouseDown(e, row, column) {
+      this.keyBeingPressed = e.which
+      if (this.keyBeingPressed === 1) {
+        this.affectCell(row, column, actions.INSERT)
+      } else if (this.keyBeingPressed === 3) {
+        this.affectCell(row, column, actions.MARK)
+      }
+    },
+
+    onMouseUp() {
+      this.keyBeingPressed = -1
+      this.isInserting = false
+      this.isRemoving = false
+    },
+
+    onHover(row, column) {
+      if (this.keyBeingPressed > -1) {
+        if (this.keyBeingPressed === 1) {
+          this.affectCell(row, column, actions.INSERT)
+        } else if (this.keyBeingPressed === 3) {
+          this.affectCell(row, column, actions.MARK)
+        }
+      }
     },
   },
 }
@@ -187,6 +226,7 @@ export default {
   width: 30px;
   text-align: center;
   letter-spacing: 1px;
+  user-select: none;
 
   &--clickable {
     cursor: pointer;
